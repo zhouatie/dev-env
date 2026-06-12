@@ -8,12 +8,18 @@ mkdir -p \
   "$DEV_HOME/.cache" \
   "$DEV_HOME/.config" \
   "$DEV_HOME/.config/git" \
+  "$DEV_HOME/.config/nvim/lua/plugins/local" \
   "$DEV_HOME/.local/share" \
   "$DEV_HOME/.npm" \
   "$DEV_HOME/.pnpm-store" \
   "$DEV_HOME/.ssh" \
   "$DEV_HOME/go/pkg/mod" \
   /workspace
+
+touch \
+  "$DEV_HOME/.zshrc.local.pre" \
+  "$DEV_HOME/.zshrc.local" \
+  "$DEV_HOME/.config/git/config.local"
 
 chown -R "$DEV_USER:$DEV_USER" \
   "$DEV_HOME/.cache" \

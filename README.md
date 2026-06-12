@@ -56,19 +56,30 @@ CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude"
 
 默认启动不会自动同步 chezmoi。`atie-chezmoi-sync` 只同步 `CHEZMOI_TARGETS` 白名单中已被 chezmoi 管理的条目，并排除 chezmoi scripts、encrypted 条目和 `CHEZMOI_EXCLUDE_TARGETS`。AI CLI 配置不在默认同步范围内。
 
+容器启动时会创建空的 local 覆盖文件，避免全量 `chezmoi apply` 或手动 shell 启动时因为本机 local 文件缺失而报错：
+
+```text
+~/.zshrc.local.pre
+~/.zshrc.local
+~/.config/git/config.local
+~/.config/nvim/lua/plugins/local/
+```
+
+这些文件和目录只是容器内兜底，不来自 chezmoi 远程配置。
+
 ## 推送到镜像仓库
 
-先给镜像打 tag：
+先构建并推送镜像：
 
 ```bash
-docker tag atie-dev-env:2026-06-01 ghcr.io/zhouatie/atie-dev-env:2026-06-01
-docker push ghcr.io/zhouatie/atie-dev-env:2026-06-01
+docker compose build
+docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12
 ```
 
 新 Mac 安装 OrbStack 后：
 
 ```bash
-docker pull ghcr.io/zhouatie/atie-dev-env:2026-06-01
+docker pull ghcr.io/zhouatie/atie-dev-env:2026-06-12
 docker run --rm -it \
   --net host \
   -e SSH_AUTH_SOCK=/agent.sock \
@@ -76,7 +87,7 @@ docker run --rm -it \
   -v "$PWD:/workspace" \
   -v /run/host-services/ssh-auth.sock:/agent.sock \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/zhouatie/atie-dev-env:2026-06-01
+  ghcr.io/zhouatie/atie-dev-env:2026-06-12
 ```
 
 使用 `--net host` 后，容器内启动的服务可以直接从 Mac 访问：
