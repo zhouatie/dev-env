@@ -1,0 +1,10 @@
+.git
+.DS_Store
+node_modules
+dist
+build
+.cache
+.venv
+target
+*.log
+
