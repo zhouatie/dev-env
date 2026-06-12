@@ -1,0 +1,126 @@
+.dockerignore
+  4550e29ff4ceb648 1-10
+Dockerfile
+  4550e29ff4ceb648 20-21,104-107,162,165
+  83235b057cca5a4a 1-19,22-103,108-161,163-164,166-171
+scripts/chezmoi-sync.sh
+  4550e29ff4ceb648 1-70,72-96
+  2cd5018e36a4beae 71
+docker-compose.yml
+  4550e29ff4ceb648 1-53
+home/.zshrc
+  4550e29ff4ceb648 1-22
+README.md
+  83235b057cca5a4a 1-12,14-15,18-39,59-72,76,78-79,90-111,113-125
+  4550e29ff4ceb648 13,16-17,40-58,73-75,77,80-89,112
+scripts/entrypoint.sh
+  4550e29ff4ceb648 1-5,7-16,18-26,28-54
+  2cd5018e36a4beae 6,17,27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8-ntes.8",
+  "base_commit_sha": "ec8f8d0710713c12b6288d6206753085f261b5ee",
+  "prompts": {
+    "2cd5018e36a4beae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e9854-5097-7280-88c3-4fd45ed98fae",
+        "model": "gpt-5.5"
+      },
+      "human_author": "zhoushitie",
+      "messages": [],
+      "total_additions": 96,
+      "total_deletions": 94,
+      "accepted_lines": 4,
+      "overriden_lines": 0,
+      "per_file_stats": {
+        "scripts/chezmoi-sync.sh": {
+          "additions": 32,
+          "deletions": 31,
+          "accepted_lines": 1
+        },
+        "scripts/entrypoint.sh": {
+          "additions": 35,
+          "deletions": 33,
+          "accepted_lines": 3
+        },
+        "home/.zshrc": {
+          "additions": 29,
+          "deletions": 30
+        }
+      }
+    },
+    "4550e29ff4ceb648": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e8730-c9c7-7ba2-bdff-cb0b0a06dba8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "zhoushitie",
+      "messages": [],
+      "total_additions": 377,
+      "total_deletions": 105,
+      "accepted_lines": 276,
+      "overriden_lines": 0,
+      "per_file_stats": {
+        "scripts/chezmoi-sync.sh": {
+          "additions": 95,
+          "accepted_lines": 95
+        },
+        "scripts/entrypoint.sh": {
+          "additions": 136,
+          "deletions": 84,
+          "accepted_lines": 51
+        },
+        "Dockerfile": {
+          "additions": 8,
+          "deletions": 3,
+          "accepted_lines": 8
+        },
+        "docker-compose.yml": {
+          "additions": 59,
+          "deletions": 6,
+          "accepted_lines": 53
+        },
+        "README.md": {
+          "additions": 46,
+          "deletions": 12,
+          "accepted_lines": 37
+        },
+        "home/.zshrc": {
+          "additions": 23,
+          "accepted_lines": 22
+        },
+        ".dockerignore": {
+          "additions": 10,
+          "accepted_lines": 10
+        }
+      }
+    },
+    "83235b057cca5a4a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e824a-95f3-7430-aecc-47f7b25971a7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "zhoushitie",
+      "messages": [],
+      "total_additions": 263,
+      "total_deletions": 6,
+      "accepted_lines": 251,
+      "overriden_lines": 0,
+      "per_file_stats": {
+        "Dockerfile": {
+          "additions": 172,
+          "deletions": 6,
+          "accepted_lines": 163
+        },
+        "README.md": {
+          "additions": 91,
+          "accepted_lines": 88
+        }
+      }
+    }
+  }
+}
