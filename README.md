@@ -10,7 +10,7 @@
 - 语言运行时：Node、pnpm、yarn、bun、Python/uv、Go、Rust、Java 21。
 - AI / 编码助手 CLI：codex、claude、opencode。
 - SDD 工具：openspec。
-- dotfiles：通过容器内的 `atie-chezmoi-sync` 手动同步白名单配置。
+- dotfiles：容器启动时通过 `atie-chezmoi-sync` 同步白名单配置。
 - Android / 文件监听：adb、watchman。
 - 包管理缓存：通过 Docker volume 保留 npm、pnpm、cargo、Go module 等缓存。
 - SSH：通过 OrbStack SSH agent 转发，不把宿主机私钥写入镜像或容器。
@@ -39,10 +39,16 @@ WORKSPACE_DIR=/Users/zhoushitie/Desktop/work/my-project docker compose run --rm 
 
 ## chezmoi 同步
 
-容器启动后，在容器内手动执行：
+容器默认启动时会自动执行一次：
 
 ```bash
-atie-chezmoi-sync
+CHEZMOI_PULL=0 atie-chezmoi-sync
+```
+
+如需临时关闭自动同步：
+
+```bash
+CHEZMOI_APPLY=0 docker compose run --rm dev
 ```
 
 同步命令会读取以下可选变量：
@@ -50,11 +56,18 @@ atie-chezmoi-sync
 ```bash
 CHEZMOI_REPO=git@github.com:zhouatie/dotfiles.git
 CHEZMOI_BRANCH=main
-CHEZMOI_TARGETS=".config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore"
+CHEZMOI_STARTUP_PULL=0
+CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore"
 CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude"
 ```
 
-默认启动不会自动同步 chezmoi。`atie-chezmoi-sync` 只同步 `CHEZMOI_TARGETS` 白名单中已被 chezmoi 管理的条目，并排除 chezmoi scripts、encrypted 条目和 `CHEZMOI_EXCLUDE_TARGETS`。AI CLI 配置不在默认同步范围内。
+启动时默认不执行 `git pull`，只使用 Docker volume 中已有的 chezmoi source apply 白名单配置。需要更新 dotfiles 时，在容器内手动执行：
+
+```bash
+atie-chezmoi-sync
+```
+
+`atie-chezmoi-sync` 手动执行时默认会拉取最新 chezmoi source，然后只同步 `CHEZMOI_TARGETS` 白名单中已被 chezmoi 管理的条目，并排除 chezmoi scripts、encrypted 条目和 `CHEZMOI_EXCLUDE_TARGETS`。AI CLI 配置不在默认同步范围内。
 
 容器启动时会创建空的 local 覆盖文件，避免全量 `chezmoi apply` 或手动 shell 启动时因为本机 local 文件缺失而报错：
 
@@ -67,27 +80,60 @@ CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude"
 
 这些文件和目录只是容器内兜底，不来自 chezmoi 远程配置。
 
+## Codex 登录状态
+
+Codex CLI 登录缓存通过 Docker volume 持久化：
+
+```text
+codex-state:/home/dev/.codex
+```
+
+在其它 Mac 上使用裸 `docker run` 时，对应挂载为：
+
+```text
+atie-dev-codex:/home/dev/.codex
+```
+
+这个 volume 不进入镜像，不进入 chezmoi，也不和宿主机 `~/.codex` 绑定。第一次在容器内执行 `codex login` 后，后续删除并重建容器仍会复用该 volume 中的登录状态。
+
 ## 推送到镜像仓库
 
-先构建并推送镜像：
+先构建并推送明确版本 tag，再同步更新日常使用的移动 tag：
 
 ```bash
 docker compose build
-docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12
+docker tag ghcr.io/zhouatie/atie-dev-env:2026-06-12.3 ghcr.io/zhouatie/atie-dev-env:dev
+docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12.3
+docker push ghcr.io/zhouatie/atie-dev-env:dev
 ```
+
+明确版本 tag 用于回滚和排查，`dev` tag 用于其它电脑的 `atiedev` 日常启动。只要每次发布时更新 `dev` tag，其它电脑的启动配置就不需要跟着改。
 
 新 Mac 安装 OrbStack 后：
 
 ```bash
-docker pull ghcr.io/zhouatie/atie-dev-env:2026-06-12
 docker run --rm -it \
   --net host \
   -e SSH_AUTH_SOCK=/agent.sock \
-  -e CHEZMOI_REPO=git@github.com:zhouatie/dotfiles.git \
+  -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" \
+  -e CHEZMOI_APPLY=1 \
+  -e CHEZMOI_STARTUP_PULL=0 \
+  -e CHEZMOI_REPO=https://github.com/zhouatie/dotfiles.git \
+  -e CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore" \
+  -e CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude" \
   -v "$PWD:/workspace" \
   -v /run/host-services/ssh-auth.sock:/agent.sock \
+  -v atie-dev-codex:/home/dev/.codex \
+  -v atie-dev-chezmoi:/home/dev/.local/share/chezmoi \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  ghcr.io/zhouatie/atie-dev-env:2026-06-12
+  ghcr.io/zhouatie/atie-dev-env:dev
+```
+
+如果把上面的命令封装成 `atiedev`，建议默认直接使用本地已有的 `dev` 镜像；只有需要更新时再显式拉取：
+
+```bash
+atiedev
+atiedev --pull
 ```
 
 使用 `--net host` 后，容器内启动的服务可以直接从 Mac 访问：

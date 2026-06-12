@@ -1,6 +1,6 @@
 services:
   dev:
-    image: ghcr.io/zhouatie/atie-dev-env:2026-06-12
+    image: ghcr.io/zhouatie/atie-dev-env:2026-06-12.3
     platform: linux/arm64
     build:
       context: .
@@ -26,15 +26,17 @@ services:
       LC_ALL: C.UTF-8
       SSH_AUTH_SOCK: /agent.sock
       GIT_SSH_COMMAND: ssh -o StrictHostKeyChecking=accept-new
-      CHEZMOI_APPLY: ${CHEZMOI_APPLY:-0}
+      CHEZMOI_APPLY: ${CHEZMOI_APPLY:-1}
+      CHEZMOI_STARTUP_PULL: ${CHEZMOI_STARTUP_PULL:-0}
       CHEZMOI_REPO: ${CHEZMOI_REPO:-git@github.com:zhouatie/dotfiles.git}
       CHEZMOI_BRANCH: ${CHEZMOI_BRANCH:-}
-      CHEZMOI_TARGETS: ${CHEZMOI_TARGETS:-.config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore}
+      CHEZMOI_TARGETS: ${CHEZMOI_TARGETS:-.zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore}
       CHEZMOI_EXCLUDE_TARGETS: ${CHEZMOI_EXCLUDE_TARGETS:-.config/nvim/.git .config/nvim/.claude}
     volumes:
       - ${WORKSPACE_DIR:-./workspace}:/workspace
       - /run/host-services/ssh-auth.sock:/agent.sock
       - ssh-state:/home/dev/.ssh
+      - codex-state:/home/dev/.codex
       - chezmoi-source:/home/dev/.local/share/chezmoi
       - dev-cache:/home/dev/.cache
       - npm-cache:/home/dev/.npm
@@ -46,6 +48,7 @@ services:
 volumes:
   dev-cache:
   ssh-state:
+  codex-state:
   chezmoi-source:
   npm-cache:
   pnpm-store:

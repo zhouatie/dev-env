@@ -3,8 +3,24 @@ set -euo pipefail
 
 DEV_USER="${DEV_USER:-dev}"
 DEFAULT_CHEZMOI_REPO="git@github.com:zhouatie/dotfiles.git"
-DEFAULT_CHEZMOI_TARGETS=".config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore"
+DEFAULT_CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore"
 DEFAULT_CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --pull)
+      CHEZMOI_PULL=1
+      ;;
+    --no-pull)
+      CHEZMOI_PULL=0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 if [ "$(id -u)" -eq 0 ]; then
   DEV_HOME="$(getent passwd "$DEV_USER" | cut -d: -f6)"
@@ -19,6 +35,7 @@ else
 fi
 
 CHEZMOI_REPO="${CHEZMOI_REPO:-$DEFAULT_CHEZMOI_REPO}"
+CHEZMOI_PULL="${CHEZMOI_PULL:-1}"
 CHEZMOI_TARGETS="${CHEZMOI_TARGETS:-$DEFAULT_CHEZMOI_TARGETS}"
 CHEZMOI_EXCLUDE_TARGETS="${CHEZMOI_EXCLUDE_TARGETS:-$DEFAULT_CHEZMOI_EXCLUDE_TARGETS}"
 
@@ -54,7 +71,9 @@ mkdir -p "$DEV_HOME/.config" "$DEV_HOME/.config/git" "$DEV_HOME/.local/share"
 
 chezmoi_source="$DEV_HOME/.local/share/chezmoi"
 if [ -d "$chezmoi_source/.git" ]; then
-  run_as_target chezmoi git -- pull --ff-only
+  if [ "$CHEZMOI_PULL" = "1" ]; then
+    run_as_target chezmoi git -- pull --ff-only
+  fi
 elif [ -n "$CHEZMOI_REPO" ]; then
   run_as_target chezmoi init "$CHEZMOI_REPO"
 else
@@ -64,7 +83,9 @@ fi
 
 if [ -n "${CHEZMOI_BRANCH:-}" ]; then
   run_as_target chezmoi git -- checkout "$CHEZMOI_BRANCH"
-  run_as_target chezmoi git -- pull --ff-only
+  if [ "$CHEZMOI_PULL" = "1" ]; then
+    run_as_target chezmoi git -- pull --ff-only
+  fi
 fi
 
 managed_entries="$(run_as_target chezmoi managed --exclude=scripts,encrypted --path-style relative)"

@@ -6,6 +6,7 @@ DEV_HOME="$(getent passwd "$DEV_USER" | cut -d: -f6)"
 
 mkdir -p \
   "$DEV_HOME/.cache" \
+  "$DEV_HOME/.codex" \
   "$DEV_HOME/.config" \
   "$DEV_HOME/.config/git" \
   "$DEV_HOME/.config/nvim/lua/plugins/local" \
@@ -23,13 +24,13 @@ touch \
 
 chown -R "$DEV_USER:$DEV_USER" \
   "$DEV_HOME/.cache" \
+  "$DEV_HOME/.codex" \
   "$DEV_HOME/.config" \
   "$DEV_HOME/.local" \
   "$DEV_HOME/.npm" \
   "$DEV_HOME/.pnpm-store" \
   "$DEV_HOME/.ssh" \
-  "$DEV_HOME/go" \
-  /workspace 2>/dev/null || true
+  "$DEV_HOME/go" 2>/dev/null || true
 
 chmod 700 "$DEV_HOME/.ssh" 2>/dev/null || true
 
@@ -54,7 +55,7 @@ if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "$SSH_AUTH_SOCK" ]; then
 fi
 
 if [ "${CHEZMOI_APPLY:-0}" = "1" ]; then
-  atie-chezmoi-sync
+  CHEZMOI_PULL="${CHEZMOI_STARTUP_PULL:-0}" atie-chezmoi-sync
 fi
 
 exec sudo -E -H -u "$DEV_USER" env "PATH=$PATH" "$@"
