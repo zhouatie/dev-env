@@ -145,8 +145,8 @@ atiedev --pull
 
 ```bash
 docker compose build
-docker tag ghcr.io/zhouatie/atie-dev-env:2026-06-12.5 ghcr.io/zhouatie/atie-dev-env:dev
-docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12.5
+docker tag ghcr.io/zhouatie/atie-dev-env:2026-06-12.6 ghcr.io/zhouatie/atie-dev-env:dev
+docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12.6
 docker push ghcr.io/zhouatie/atie-dev-env:dev
 ```
 
@@ -203,7 +203,7 @@ http://127.0.0.1:5173
 - ast-grep 0.39.4
 - starship 1.24.2
 - atuin 18.10.0
-- yazi 26.5.6
+- yazi 26.2.2
 - neovim 0.12.0
 - chezmoi 2.70.0
 - codex 0.135.0

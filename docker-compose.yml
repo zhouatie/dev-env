@@ -1,6 +1,6 @@
 services:
   dev:
-    image: ghcr.io/zhouatie/atie-dev-env:2026-06-12.5
+    image: ghcr.io/zhouatie/atie-dev-env:2026-06-12.6
     platform: linux/arm64
     build:
       context: .
