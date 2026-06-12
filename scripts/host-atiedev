@@ -29,12 +29,16 @@ if [[ "${1:-}" == "--pull" ]]; then
 fi
 
 exec env PATH="$docker_path:$PATH" docker run --rm -it --init --net host \
+  --security-opt seccomp=unconfined \
   -e SSH_AUTH_SOCK=/agent.sock \
   -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" \
+  -e AITEM_TERMINAL_SESSION_ID \
+  -e AITEM_NOTIFY_URL \
+  -e AITEM_NOTIFY_TOKEN \
   -e CHEZMOI_APPLY=1 \
   -e CHEZMOI_STARTUP_PULL=0 \
   -e CHEZMOI_REPO=https://github.com/zhouatie/dotfiles.git \
-  -e CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore" \
+  -e CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git" \
   -e CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude" \
   -v "$workspace:/workspace" \
   -v /run/host-services/ssh-auth.sock:/agent.sock \

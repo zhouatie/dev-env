@@ -37,6 +37,39 @@ docker compose run --rm dev
 WORKSPACE_DIR=/Users/zhoushitie/Desktop/work/my-project docker compose run --rm dev
 ```
 
+## GitHub SSH agent
+
+容器通过宿主机 SSH agent 使用 GitHub SSH key，不复制 `~/.ssh/id_*` 私钥到镜像或容器。`docker-compose.yml` 和 `scripts/host-atiedev` 会把宿主机 agent socket 挂载到容器内的 `/agent.sock`，并设置：
+
+```text
+SSH_AUTH_SOCK=/agent.sock
+GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new
+```
+
+宿主机先确认 agent 里有可用 key：
+
+```bash
+ssh-add -l
+ssh -o StrictHostKeyChecking=accept-new -T git@github.com
+```
+
+如果 `ssh-add -l` 没有列出 key，在宿主机把 `Host github.com` 对应的 `IdentityFile` 加进 agent，例如：
+
+```bash
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519_github
+```
+
+进入容器后验证转发是否生效：
+
+```bash
+test -S "$SSH_AUTH_SOCK"
+ssh-add -l
+ssh -o StrictHostKeyChecking=accept-new -T git@github.com
+git remote -v
+```
+
+只要项目 remote 是 `git@github.com:owner/repo.git` 这类 SSH 地址，`git push origin dev` 会通过宿主机 agent 完成认证。若容器内 `ssh-add -l` 报 `The agent has no identities`，问题在宿主机 agent 没加载 key；若 `test -S "$SSH_AUTH_SOCK"` 失败，问题在 agent socket 没有被挂载进容器。
+
 ## chezmoi 同步
 
 容器默认启动时会自动执行一次：
@@ -57,7 +90,7 @@ CHEZMOI_APPLY=0 docker compose run --rm dev
 CHEZMOI_REPO=git@github.com:zhouatie/dotfiles.git
 CHEZMOI_BRANCH=main
 CHEZMOI_STARTUP_PULL=0
-CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore"
+CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git"
 CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude"
 ```
 
@@ -95,6 +128,24 @@ atie-dev-codex:/home/dev/.codex
 ```
 
 这个 volume 不进入镜像，不进入 chezmoi，也不和宿主机 `~/.codex` 绑定。第一次在容器内执行 `codex login` 后，后续删除并重建容器仍会复用该 volume 中的登录状态。
+
+## AIterm Codex 推送通知
+
+当容器从 AIterm 内置终端启动时，`docker-compose.yml` 和 `scripts/host-atiedev` 会把下面三个 AIterm 通知环境变量透传进容器：
+
+```text
+AITEM_TERMINAL_SESSION_ID
+AITEM_NOTIFY_URL
+AITEM_NOTIFY_TOKEN
+```
+
+容器使用 host networking，因此容器内的 Codex hook 可以通过 `AITEM_NOTIFY_URL` 回推到宿主机 AIterm。还需要在容器内安装 Codex hook 配置和通知脚本副本。安装步骤见 AIterm 仓库：
+
+```text
+docs/codex-hook-notifications.md
+```
+
+推荐把 `scripts/aiterm-notify.mjs` 复制到 `/home/dev/.codex/aiterm-notify.mjs`，因为 `/home/dev/.codex` 是持久化 volume，后续切换 workspace 时 hook 路径仍然有效。
 
 ## Neovim / LazyVim 状态
 
@@ -157,12 +208,13 @@ docker push ghcr.io/zhouatie/atie-dev-env:dev
 ```bash
 docker run --rm -it \
   --net host \
+  --security-opt seccomp=unconfined \
   -e SSH_AUTH_SOCK=/agent.sock \
   -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" \
   -e CHEZMOI_APPLY=1 \
   -e CHEZMOI_STARTUP_PULL=0 \
   -e CHEZMOI_REPO=https://github.com/zhouatie/dotfiles.git \
-  -e CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore" \
+  -e CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git" \
   -e CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude" \
   -v "$PWD:/workspace" \
   -v /run/host-services/ssh-auth.sock:/agent.sock \

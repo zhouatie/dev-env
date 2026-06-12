@@ -3,7 +3,7 @@ set -euo pipefail
 
 DEV_USER="${DEV_USER:-dev}"
 DEFAULT_CHEZMOI_REPO="git@github.com:zhouatie/dotfiles.git"
-DEFAULT_CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore"
+DEFAULT_CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git"
 DEFAULT_CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude"
 
 while [ "$#" -gt 0 ]; do

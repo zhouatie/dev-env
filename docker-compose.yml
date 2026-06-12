@@ -21,17 +21,22 @@ services:
     stdin_open: true
     working_dir: /workspace
     network_mode: host
+    security_opt:
+      - seccomp=unconfined
     environment:
       TZ: Asia/Shanghai
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       SSH_AUTH_SOCK: /agent.sock
       GIT_SSH_COMMAND: ssh -o StrictHostKeyChecking=accept-new
+      AITEM_TERMINAL_SESSION_ID: ${AITEM_TERMINAL_SESSION_ID:-}
+      AITEM_NOTIFY_URL: ${AITEM_NOTIFY_URL:-}
+      AITEM_NOTIFY_TOKEN: ${AITEM_NOTIFY_TOKEN:-}
       CHEZMOI_APPLY: ${CHEZMOI_APPLY:-1}
       CHEZMOI_STARTUP_PULL: ${CHEZMOI_STARTUP_PULL:-0}
       CHEZMOI_REPO: ${CHEZMOI_REPO:-git@github.com:zhouatie/dotfiles.git}
       CHEZMOI_BRANCH: ${CHEZMOI_BRANCH:-}
-      CHEZMOI_TARGETS: ${CHEZMOI_TARGETS:-.zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore}
+      CHEZMOI_TARGETS: ${CHEZMOI_TARGETS:-.zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git}
       CHEZMOI_EXCLUDE_TARGETS: ${CHEZMOI_EXCLUDE_TARGETS:-.config/nvim/.git .config/nvim/.claude}
     volumes:
       - ${WORKSPACE_DIR:-./workspace}:/workspace
