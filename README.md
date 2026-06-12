@@ -96,14 +96,57 @@ atie-dev-codex:/home/dev/.codex
 
 这个 volume 不进入镜像，不进入 chezmoi，也不和宿主机 `~/.codex` 绑定。第一次在容器内执行 `codex login` 后，后续删除并重建容器仍会复用该 volume 中的登录状态。
 
+## Neovim / LazyVim 状态
+
+Neovim 配置来自 chezmoi 的 `.config/nvim`，LazyVim 运行时生成物通过 Docker volume 持久化：
+
+```text
+nvim-data:/home/dev/.local/share/nvim
+nvim-state:/home/dev/.local/state/nvim
+dev-cache:/home/dev/.cache
+```
+
+其中 `nvim-data` 保存 LazyVim 插件、Mason、Treesitter 等下载内容，`nvim-state` 保存 shada、日志等状态，`dev-cache` 已覆盖 `~/.cache/nvim`。这些目录不进入镜像，也不进入 chezmoi。
+
+## atiedev 启动脚本
+
+宿主机的 `atiedev` 长启动参数集中维护在：
+
+```text
+scripts/host-atiedev
+```
+
+安装到宿主机：
+
+```bash
+mkdir -p ~/.local/bin
+cp scripts/host-atiedev ~/.local/bin/atiedev
+chmod +x ~/.local/bin/atiedev
+```
+
+`~/.zshrc.local` 中只需要保留一个轻量 wrapper：
+
+```zsh
+atiedev() {
+  "$HOME/.local/bin/atiedev" "$@"
+}
+```
+
+默认直接使用本地已有的 `dev` 镜像；只有需要更新镜像时再显式拉取：
+
+```bash
+atiedev
+atiedev --pull
+```
+
 ## 推送到镜像仓库
 
 先构建并推送明确版本 tag，再同步更新日常使用的移动 tag：
 
 ```bash
 docker compose build
-docker tag ghcr.io/zhouatie/atie-dev-env:2026-06-12.3 ghcr.io/zhouatie/atie-dev-env:dev
-docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12.3
+docker tag ghcr.io/zhouatie/atie-dev-env:2026-06-12.5 ghcr.io/zhouatie/atie-dev-env:dev
+docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12.5
 docker push ghcr.io/zhouatie/atie-dev-env:dev
 ```
 
@@ -125,15 +168,10 @@ docker run --rm -it \
   -v /run/host-services/ssh-auth.sock:/agent.sock \
   -v atie-dev-codex:/home/dev/.codex \
   -v atie-dev-chezmoi:/home/dev/.local/share/chezmoi \
+  -v atie-dev-nvim-data:/home/dev/.local/share/nvim \
+  -v atie-dev-nvim-state:/home/dev/.local/state/nvim \
   -v /var/run/docker.sock:/var/run/docker.sock \
   ghcr.io/zhouatie/atie-dev-env:dev
-```
-
-如果把上面的命令封装成 `atiedev`，建议默认直接使用本地已有的 `dev` 镜像；只有需要更新时再显式拉取：
-
-```bash
-atiedev
-atiedev --pull
 ```
 
 使用 `--net host` 后，容器内启动的服务可以直接从 Mac 访问：
@@ -166,6 +204,7 @@ http://127.0.0.1:5173
 - starship 1.24.2
 - atuin 18.10.0
 - yazi 26.5.6
+- neovim 0.12.0
 - chezmoi 2.70.0
 - codex 0.135.0
 - claude 2.1.153

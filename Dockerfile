@@ -18,6 +18,7 @@ ARG STARSHIP_VERSION=1.24.2
 ARG ATUIN_VERSION=18.10.0
 ARG YAZI_VERSION=26.5.6
 ARG CHEZMOI_VERSION=2.70.0
+ARG NVIM_VERSION=0.12.0
 ARG OPENSPEC_VERSION=1.3.1
 ARG TZ=Asia/Shanghai
 
@@ -49,7 +50,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     less \
     locales \
     nano \
-    neovim \
     openssh-client \
     pkg-config \
     procps \
@@ -105,6 +105,12 @@ RUN set -eux; \
   tar -xzf /tmp/chezmoi.tar.gz -C /tmp chezmoi; \
   install -m 0755 /tmp/chezmoi /usr/local/bin/chezmoi; \
   rm -f /tmp/chezmoi /tmp/chezmoi.tar.gz; \
+  curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux-arm64.tar.gz" -o /tmp/nvim.tar.gz; \
+  rm -rf /opt/nvim; \
+  mkdir -p /opt/nvim; \
+  tar -xzf /tmp/nvim.tar.gz -C /opt/nvim --strip-components=1; \
+  ln -sf /opt/nvim/bin/nvim /usr/local/bin/nvim; \
+  rm -f /tmp/nvim.tar.gz; \
   ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose || true
 
 RUN groupadd --gid ${USER_GID} ${USERNAME} \

@@ -11,6 +11,10 @@ mkdir -p \
   "$DEV_HOME/.config/git" \
   "$DEV_HOME/.config/nvim/lua/plugins/local" \
   "$DEV_HOME/.local/share" \
+  "$DEV_HOME/.local/share/chezmoi" \
+  "$DEV_HOME/.local/share/nvim" \
+  "$DEV_HOME/.local/state" \
+  "$DEV_HOME/.local/state/nvim" \
   "$DEV_HOME/.npm" \
   "$DEV_HOME/.pnpm-store" \
   "$DEV_HOME/.ssh" \
@@ -26,11 +30,18 @@ chown -R "$DEV_USER:$DEV_USER" \
   "$DEV_HOME/.cache" \
   "$DEV_HOME/.codex" \
   "$DEV_HOME/.config" \
-  "$DEV_HOME/.local" \
+  "$DEV_HOME/.local/share/chezmoi" \
   "$DEV_HOME/.npm" \
   "$DEV_HOME/.pnpm-store" \
   "$DEV_HOME/.ssh" \
   "$DEV_HOME/go" 2>/dev/null || true
+
+chown "$DEV_USER:$DEV_USER" \
+  "$DEV_HOME/.local" \
+  "$DEV_HOME/.local/share" \
+  "$DEV_HOME/.local/share/nvim" \
+  "$DEV_HOME/.local/state" \
+  "$DEV_HOME/.local/state/nvim" 2>/dev/null || true
 
 chmod 700 "$DEV_HOME/.ssh" 2>/dev/null || true
 

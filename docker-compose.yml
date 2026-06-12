@@ -1,6 +1,6 @@
 services:
   dev:
-    image: ghcr.io/zhouatie/atie-dev-env:2026-06-12.3
+    image: ghcr.io/zhouatie/atie-dev-env:2026-06-12.5
     platform: linux/arm64
     build:
       context: .
@@ -14,6 +14,7 @@ services:
         GO_VERSION: "1.25.0"
         RUST_VERSION: "1.94.1"
         CHEZMOI_VERSION: "2.70.0"
+        NVIM_VERSION: "0.12.0"
         TZ: Asia/Shanghai
     init: true
     tty: true
@@ -38,6 +39,8 @@ services:
       - ssh-state:/home/dev/.ssh
       - codex-state:/home/dev/.codex
       - chezmoi-source:/home/dev/.local/share/chezmoi
+      - nvim-data:/home/dev/.local/share/nvim
+      - nvim-state:/home/dev/.local/state/nvim
       - dev-cache:/home/dev/.cache
       - npm-cache:/home/dev/.npm
       - pnpm-store:/home/dev/.pnpm-store
@@ -50,6 +53,8 @@ volumes:
   ssh-state:
   codex-state:
   chezmoi-source:
+  nvim-data:
+  nvim-state:
   npm-cache:
   pnpm-store:
   cargo-registry:

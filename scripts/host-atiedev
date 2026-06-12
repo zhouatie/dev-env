@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+image="${ATIE_DEV_IMAGE:-ghcr.io/zhouatie/atie-dev-env:dev}"
+docker_path="/usr/local/bin:${HOME}/.orbstack/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+workspace="${ATIE_DEV_WORKSPACE:-$PWD}"
+
+show_help() {
+  cat <<'EOF'
+Usage: atiedev [--pull] [command...]
+
+Options:
+  --pull      Pull the latest ghcr.io/zhouatie/atie-dev-env:dev before starting.
+
+Environment:
+  ATIE_DEV_IMAGE      Override the Docker image.
+  ATIE_DEV_WORKSPACE  Override the host directory mounted to /workspace.
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  show_help
+  exit 0
+fi
+
+if [[ "${1:-}" == "--pull" ]]; then
+  shift
+  PATH="$docker_path" docker pull "$image" || true
+fi
+
+exec env PATH="$docker_path:$PATH" docker run --rm -it --init --net host \
+  -e SSH_AUTH_SOCK=/agent.sock \
+  -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" \
+  -e CHEZMOI_APPLY=1 \
+  -e CHEZMOI_STARTUP_PULL=0 \
+  -e CHEZMOI_REPO=https://github.com/zhouatie/dotfiles.git \
+  -e CHEZMOI_TARGETS=".zshrc .config/starship.toml .config/bat .config/lazygit/config.yml .config/openspec/config.yaml .config/atuin/config.toml .config/yazi .config/tmux/tmux.conf .config/nvim .config/git/ignore" \
+  -e CHEZMOI_EXCLUDE_TARGETS=".config/nvim/.git .config/nvim/.claude" \
+  -v "$workspace:/workspace" \
+  -v /run/host-services/ssh-auth.sock:/agent.sock \
+  -v atie-dev-ssh:/home/dev/.ssh \
+  -v atie-dev-codex:/home/dev/.codex \
+  -v atie-dev-chezmoi:/home/dev/.local/share/chezmoi \
+  -v atie-dev-nvim-data:/home/dev/.local/share/nvim \
+  -v atie-dev-nvim-state:/home/dev/.local/state/nvim \
+  -v atie-dev-cache:/home/dev/.cache \
+  -v atie-dev-npm:/home/dev/.npm \
+  -v atie-dev-pnpm:/home/dev/.pnpm-store \
+  -v atie-dev-cargo:/home/dev/.cargo/registry \
+  -v atie-dev-go:/home/dev/go/pkg/mod \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  "$image" "$@"
