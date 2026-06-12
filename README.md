@@ -255,7 +255,7 @@ http://127.0.0.1:5173
 - ast-grep 0.39.4
 - starship 1.24.2
 - atuin 18.10.0
-- yazi 26.2.2
+- yazi 26.1.22
 - neovim 0.12.0
 - chezmoi 2.70.0
 - codex 0.135.0
