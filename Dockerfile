@@ -7,6 +7,27 @@ ARG USERNAME=dev
 ARG USER_UID=1001
 ARG USER_GID=1001
 ARG TZ=Asia/Shanghai
+ARG NODE_VERSION
+ARG PNPM_VERSION
+ARG YARN_VERSION
+ARG BUN_VERSION
+ARG UV_VERSION
+ARG PYTHON_VERSION
+ARG GO_VERSION
+ARG RUST_VERSION
+ARG GH_VERSION
+ARG LAZYGIT_VERSION
+ARG DELTA_VERSION
+ARG STARSHIP_VERSION
+ARG ATUIN_VERSION
+ARG YAZI_VERSION
+ARG CHEZMOI_VERSION
+ARG NVIM_VERSION
+ARG AST_GREP_VERSION
+ARG CODEX_VERSION
+ARG CLAUDE_CODE_VERSION
+ARG OPENCODE_VERSION
+ARG OPENSPEC_VERSION
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=${TZ} \
@@ -74,24 +95,24 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
   && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
   && chmod 0440 /etc/sudoers.d/${USERNAME}
 
-ARG NODE_VERSION=25.8.2
 RUN set -eux; \
+  : "${NODE_VERSION:?NODE_VERSION build arg is required}"; \
   node_arch="arm64"; \
   curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${node_arch}.tar.xz" -o /tmp/node.tar.xz; \
   mkdir -p /opt/node; \
   tar -xJf /tmp/node.tar.xz -C /opt/node --strip-components=1; \
   rm /tmp/node.tar.xz
 
-ARG GO_VERSION=1.25.0
 RUN set -eux; \
+  : "${GO_VERSION:?GO_VERSION build arg is required}"; \
   go_arch="arm64"; \
   curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${go_arch}.tar.gz" -o /tmp/go.tar.gz; \
   rm -rf /usr/local/go; \
   tar -C /usr/local -xzf /tmp/go.tar.gz; \
   rm /tmp/go.tar.gz
 
-ARG UV_VERSION=0.11.17
 RUN set -eux; \
+  : "${UV_VERSION:?UV_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-aarch64-unknown-linux-gnu.tar.gz" -o /tmp/uv.tar.gz; \
   tar -xzf /tmp/uv.tar.gz -C /tmp; \
   install -m 0755 /tmp/uv-aarch64-unknown-linux-gnu/uv /usr/local/bin/uv; \
@@ -104,9 +125,9 @@ RUN mkdir -p /home/${USERNAME}/.cache /home/${USERNAME}/.cargo /home/${USERNAME}
 USER ${USERNAME}
 WORKDIR /workspace
 
-ARG RUST_VERSION=1.94.1
 RUN --mount=type=cache,target=/home/dev/.rustup/downloads,uid=1001,gid=1001,sharing=locked \
     set -eux; \
+  : "${RUST_VERSION:?RUST_VERSION build arg is required}"; \
   curl -fsSL --retry 8 --retry-all-errors --connect-timeout 20 --max-time 600 \
     "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init" \
     -o /tmp/rustup-init; \
@@ -114,13 +135,13 @@ RUN --mount=type=cache,target=/home/dev/.rustup/downloads,uid=1001,gid=1001,shar
   /tmp/rustup-init -y --profile minimal --default-toolchain "${RUST_VERSION}"; \
   rm -f /tmp/rustup-init
 
-ARG BUN_VERSION=1.3.5
 RUN set -eux; \
+  : "${BUN_VERSION:?BUN_VERSION build arg is required}"; \
   curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
 
-ARG PYTHON_VERSION=3.14.3
 RUN --mount=type=cache,target=/home/dev/.cache/uv,uid=1001,gid=1001,sharing=locked \
     set -eux; \
+  : "${PYTHON_VERSION:?PYTHON_VERSION build arg is required}"; \
   uv python install "${PYTHON_VERSION}"; \
   py="$(uv python find "${PYTHON_VERSION}")"; \
   ln -sf "$py" "$HOME/.local/bin/python"; \
@@ -128,56 +149,56 @@ RUN --mount=type=cache,target=/home/dev/.cache/uv,uid=1001,gid=1001,sharing=lock
 
 USER root
 
-ARG GH_VERSION=2.87.3
 RUN set -eux; \
+  : "${GH_VERSION:?GH_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_arm64.deb" -o /tmp/gh.deb; \
   dpkg -i /tmp/gh.deb; \
   rm /tmp/gh.deb
 
-ARG LAZYGIT_VERSION=0.60.0
 RUN set -eux; \
+  : "${LAZYGIT_VERSION:?LAZYGIT_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_arm64.tar.gz" -o /tmp/lazygit.tar.gz; \
   tar -xzf /tmp/lazygit.tar.gz -C /tmp lazygit; \
   install -m 0755 /tmp/lazygit /usr/local/bin/lazygit; \
   rm -f /tmp/lazygit /tmp/lazygit.tar.gz
 
-ARG DELTA_VERSION=0.19.2
 RUN set -eux; \
+  : "${DELTA_VERSION:?DELTA_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_arm64.deb" -o /tmp/git-delta.deb; \
   dpkg -i /tmp/git-delta.deb; \
   rm /tmp/git-delta.deb
 
-ARG STARSHIP_VERSION=1.24.2
 RUN set -eux; \
+  : "${STARSHIP_VERSION:?STARSHIP_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/starship/starship/releases/download/v${STARSHIP_VERSION}/starship-aarch64-unknown-linux-musl.tar.gz" -o /tmp/starship.tar.gz; \
   tar -xzf /tmp/starship.tar.gz -C /tmp starship; \
   install -m 0755 /tmp/starship /usr/local/bin/starship; \
   rm -f /tmp/starship /tmp/starship.tar.gz
 
-ARG ATUIN_VERSION=18.10.0
 RUN set -eux; \
+  : "${ATUIN_VERSION:?ATUIN_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/atuinsh/atuin/releases/download/v${ATUIN_VERSION}/atuin-aarch64-unknown-linux-gnu.tar.gz" -o /tmp/atuin.tar.gz; \
   tar -xzf /tmp/atuin.tar.gz -C /tmp; \
   install -m 0755 /tmp/atuin-aarch64-unknown-linux-gnu/atuin /usr/local/bin/atuin; \
   rm -rf /tmp/atuin.tar.gz /tmp/atuin-aarch64-unknown-linux-gnu
 
-ARG YAZI_VERSION=26.1.22
 RUN set -eux; \
+  : "${YAZI_VERSION:?YAZI_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-aarch64-unknown-linux-gnu.zip" -o /tmp/yazi.zip; \
   unzip -q /tmp/yazi.zip -d /tmp; \
   install -m 0755 /tmp/yazi-aarch64-unknown-linux-gnu/yazi /usr/local/bin/yazi; \
   install -m 0755 /tmp/yazi-aarch64-unknown-linux-gnu/ya /usr/local/bin/ya; \
   rm -rf /tmp/yazi.zip /tmp/yazi-aarch64-unknown-linux-gnu
 
-ARG CHEZMOI_VERSION=2.70.0
 RUN set -eux; \
+  : "${CHEZMOI_VERSION:?CHEZMOI_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_arm64.tar.gz" -o /tmp/chezmoi.tar.gz; \
   tar -xzf /tmp/chezmoi.tar.gz -C /tmp chezmoi; \
   install -m 0755 /tmp/chezmoi /usr/local/bin/chezmoi; \
   rm -f /tmp/chezmoi /tmp/chezmoi.tar.gz
 
-ARG NVIM_VERSION=0.12.0
 RUN set -eux; \
+  : "${NVIM_VERSION:?NVIM_VERSION build arg is required}"; \
   curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux-arm64.tar.gz" -o /tmp/nvim.tar.gz; \
   rm -rf /opt/nvim; \
   mkdir -p /opt/nvim; \
@@ -185,19 +206,26 @@ RUN set -eux; \
   ln -sf /opt/nvim/bin/nvim /usr/local/bin/nvim; \
   rm -f /tmp/nvim.tar.gz
 
-ARG PNPM_VERSION=10.33.0
-ARG YARN_VERSION=1.22.19
-ARG OPENSPEC_VERSION=1.3.1
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     set -eux; \
+  : "${PNPM_VERSION:?PNPM_VERSION build arg is required}"; \
+  : "${YARN_VERSION:?YARN_VERSION build arg is required}"; \
+  : "${AST_GREP_VERSION:?AST_GREP_VERSION build arg is required}"; \
+  : "${CODEX_VERSION:?CODEX_VERSION build arg is required}"; \
+  : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION build arg is required}"; \
+  : "${OPENCODE_VERSION:?OPENCODE_VERSION build arg is required}"; \
+  : "${OPENSPEC_VERSION:?OPENSPEC_VERSION build arg is required}"; \
   npm install -g \
     "pnpm@${PNPM_VERSION}" \
     "yarn@${YARN_VERSION}" \
-    "@ast-grep/cli@0.39.4" \
-    "@openai/codex@0.135.0" \
-    "@anthropic-ai/claude-code@2.1.153" \
-    "opencode-ai@1.0.175" \
-    "@fission-ai/openspec@${OPENSPEC_VERSION}"
+    "@ast-grep/cli@${AST_GREP_VERSION}" \
+    "@openai/codex@${CODEX_VERSION}" \
+    "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+    "opencode-ai@${OPENCODE_VERSION}" \
+    "@fission-ai/openspec@${OPENSPEC_VERSION}"; \
+  mkdir -p /home/${USERNAME}/.pnpm-store; \
+  printf 'store-dir=/home/%s/.pnpm-store\n' "${USERNAME}" > /home/${USERNAME}/.npmrc; \
+  chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.pnpm-store /home/${USERNAME}/.npmrc
 
 COPY --chown=${USERNAME}:${USERNAME} home/.zshrc /home/${USERNAME}/.zshrc
 COPY --chown=${USERNAME}:${USERNAME} scripts/entrypoint.sh /usr/local/bin/dev-entrypoint

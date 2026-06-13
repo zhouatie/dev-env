@@ -26,6 +26,8 @@
 
 ## 本机构建
 
+镜像 tag、平台和工具版本集中维护在 `.env`。升级 Node、pnpm、Neovim、AI CLI 等版本时，先改 `.env`，再重新构建。
+
 ```bash
 docker compose build
 docker compose run --rm dev
@@ -37,11 +39,29 @@ docker compose run --rm dev
 WORKSPACE_DIR=/Users/zhoushitie/Desktop/work/my-project docker compose run --rm dev
 ```
 
+## 版本管理
+
+`.env` 是版本号的单一来源：
+
+```text
+IMAGE_REPOSITORY=ghcr.io/zhouatie/atie-dev-env
+IMAGE_VERSION=2026-06-12.6
+IMAGE_CHANNEL=dev
+IMAGE_PLATFORM=linux/arm64
+NODE_VERSION=25.8.2
+PNPM_VERSION=10.33.0
+...
+```
+
+`docker-compose.yml` 从 `.env` 读取 image tag 和 build args；`scripts/release-image` 也从同一个文件读取版本。`Dockerfile` 不再给这些工具版本写默认值，缺少 build args 时会直接失败，避免 compose、发布脚本和 Dockerfile 之间版本漂移。
+
 ## 构建缓存
 
 `Dockerfile` 已按缓存粒度拆分：基础 apt 包、Node、Go、uv、Rust、Bun、Python、单个 GitHub release 工具、Neovim、npm 全局包分别在独立构建层中安装。常更新的 Neovim 和 AI CLI npm 包放在靠后位置，升级它们时不会牵动前面的运行时层。
 
 构建时还使用 BuildKit cache mount 保留 apt、npm、uv、rustup 的下载缓存。这些缓存属于 Docker builder cache，不是 `docker-compose.yml` 里的运行时 volume；运行时 volume 只在容器启动后保存 npm、pnpm、cargo、Go module、Neovim 等状态。
+
+pnpm 的 store 固定为 `/home/dev/.pnpm-store`，对应 `docker-compose.yml` 里的 `pnpm-store` volume。这样不会在每个 `/workspace` 项目目录下生成独立 `.pnpm-store`。
 
 如果使用 `docker compose build --no-cache`、执行过 `docker builder prune`，或换到没有 builder cache 的新机器，下一次构建仍会全量下载。普通 `docker compose build` 会尽量复用本地构建缓存。
 
@@ -200,16 +220,26 @@ atiedev --pull
 
 ## 推送到镜像仓库
 
-先构建并推送明确版本 tag，再同步更新日常使用的移动 tag：
+先在 `.env` 中更新 `IMAGE_VERSION`，然后用发布脚本一次性构建并推送明确版本 tag 和日常使用的移动 tag：
 
 ```bash
-docker compose build
-docker tag ghcr.io/zhouatie/atie-dev-env:2026-06-12.6 ghcr.io/zhouatie/atie-dev-env:dev
-docker push ghcr.io/zhouatie/atie-dev-env:2026-06-12.6
-docker push ghcr.io/zhouatie/atie-dev-env:dev
+scripts/release-image
+```
+
+脚本默认读取 `.env`，并推送：
+
+```text
+${IMAGE_REPOSITORY}:${IMAGE_VERSION}
+${IMAGE_REPOSITORY}:${IMAGE_CHANNEL}
 ```
 
 明确版本 tag 用于回滚和排查，`dev` tag 用于其它电脑的 `atiedev` 日常启动。只要每次发布时更新 `dev` tag，其它电脑的启动配置就不需要跟着改。
+
+只想构建到本机 Docker engine 做验证时：
+
+```bash
+scripts/release-image --load
+```
 
 新 Mac 安装 OrbStack 后：
 
@@ -246,36 +276,6 @@ http://127.0.0.1:5173
 
 ## 版本
 
-当前配置尽量贴近这台机器：
+当前可控版本以 `.env` 为准。apt 仓库安装的工具版本由 Ubuntu 24.04 源决定，例如 Docker Compose、adb、watchman、eza、zoxide、tmux、pipx 等。
 
-- Node 25.8.2
-- pnpm 10.33.0
-- yarn 1.22.19
-- bun 1.3.5
-- uv 0.11.17
-- Python 3.14.3 via uv
-- Go 1.25.0
-- Rust 1.94.1
-- Java 21
-- gh 2.87.3
-- lazygit 0.60.0
-- delta 0.19.2
-- ast-grep 0.39.4
-- starship 1.24.2
-- atuin 18.10.0
-- yazi 26.1.22
-- neovim 0.12.0
-- chezmoi 2.70.0
-- codex 0.135.0
-- claude 2.1.153
-- opencode 1.0.175
-- openspec 1.3.1
-- Docker Compose 2.40.3
-- adb 34.0.4
-- watchman 4.9.0
-- eza 0.18.2
-- zoxide 0.9.3
-- tmux 3.4
-- pipx 1.4.3
-
-如果某个版本在 Linux arm64 上没有对应发行包，构建会失败；那时需要把对应 `ARG` 改成可用版本。
+如果某个版本在 Linux arm64 上没有对应发行包，构建会失败；那时需要把 `.env` 中对应版本改成可用版本。

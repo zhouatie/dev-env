@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+env_file="${ENV_FILE:-$repo_root/.env}"
+docker_path="/usr/local/bin:${HOME}/.orbstack/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+show_help() {
+  cat <<'EOF'
+Usage: scripts/release-image [--load] [--no-cache] [--push]
+
+Build the dev image from versions in .env and tag both:
+  IMAGE_REPOSITORY:IMAGE_VERSION
+  IMAGE_REPOSITORY:IMAGE_CHANNEL
+
+Options:
+  --load      Load the image into the local Docker engine instead of pushing.
+  --no-cache  Build without Docker layer cache.
+  --push      Push after build. This is the default.
+
+Environment:
+  ENV_FILE    Override the env file path. Defaults to .env.
+EOF
+}
+
+mode="push"
+no_cache=0
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --help|-h)
+      show_help
+      exit 0
+      ;;
+    --load)
+      mode="load"
+      ;;
+    --push)
+      mode="push"
+      ;;
+    --no-cache)
+      no_cache=1
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+if [ ! -f "$env_file" ]; then
+  echo "Missing env file: $env_file" >&2
+  exit 1
+fi
+
+set -a
+# shellcheck disable=SC1090
+. "$env_file"
+set +a
+
+required_vars=(
+  IMAGE_REPOSITORY IMAGE_VERSION IMAGE_CHANNEL IMAGE_PLATFORM
+  NODE_VERSION PNPM_VERSION YARN_VERSION BUN_VERSION UV_VERSION
+  PYTHON_VERSION GO_VERSION RUST_VERSION GH_VERSION LAZYGIT_VERSION
+  DELTA_VERSION STARSHIP_VERSION ATUIN_VERSION YAZI_VERSION
+  CHEZMOI_VERSION NVIM_VERSION AST_GREP_VERSION CODEX_VERSION
+  CLAUDE_CODE_VERSION OPENCODE_VERSION OPENSPEC_VERSION
+)
+
+for var in "${required_vars[@]}"; do
+  if [ -z "${!var:-}" ]; then
+    echo "Missing required variable in $env_file: $var" >&2
+    exit 1
+  fi
+done
+
+build_args=(
+  --build-arg "NODE_VERSION=$NODE_VERSION"
+  --build-arg "PNPM_VERSION=$PNPM_VERSION"
+  --build-arg "YARN_VERSION=$YARN_VERSION"
+  --build-arg "BUN_VERSION=$BUN_VERSION"
+  --build-arg "UV_VERSION=$UV_VERSION"
+  --build-arg "PYTHON_VERSION=$PYTHON_VERSION"
+  --build-arg "GO_VERSION=$GO_VERSION"
+  --build-arg "RUST_VERSION=$RUST_VERSION"
+  --build-arg "GH_VERSION=$GH_VERSION"
+  --build-arg "LAZYGIT_VERSION=$LAZYGIT_VERSION"
+  --build-arg "DELTA_VERSION=$DELTA_VERSION"
+  --build-arg "STARSHIP_VERSION=$STARSHIP_VERSION"
+  --build-arg "ATUIN_VERSION=$ATUIN_VERSION"
+  --build-arg "YAZI_VERSION=$YAZI_VERSION"
+  --build-arg "CHEZMOI_VERSION=$CHEZMOI_VERSION"
+  --build-arg "NVIM_VERSION=$NVIM_VERSION"
+  --build-arg "AST_GREP_VERSION=$AST_GREP_VERSION"
+  --build-arg "CODEX_VERSION=$CODEX_VERSION"
+  --build-arg "CLAUDE_CODE_VERSION=$CLAUDE_CODE_VERSION"
+  --build-arg "OPENCODE_VERSION=$OPENCODE_VERSION"
+  --build-arg "OPENSPEC_VERSION=$OPENSPEC_VERSION"
+  --build-arg "TZ=${TZ:-Asia/Shanghai}"
+)
+
+output_arg="--push"
+if [ "$mode" = "load" ]; then
+  output_arg="--load"
+fi
+
+export PATH="$docker_path:$PATH"
+
+cmd=(
+  docker buildx build
+  --platform "$IMAGE_PLATFORM"
+  -t "$IMAGE_REPOSITORY:$IMAGE_VERSION"
+  -t "$IMAGE_REPOSITORY:$IMAGE_CHANNEL"
+  "${build_args[@]}"
+)
+
+if [ "$no_cache" = "1" ]; then
+  cmd+=(--no-cache)
+fi
+
+cmd+=(
+  "$output_arg"
+  "$repo_root"
+)
+
+exec "${cmd[@]}"
