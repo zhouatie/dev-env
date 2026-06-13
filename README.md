@@ -37,6 +37,14 @@ docker compose run --rm dev
 WORKSPACE_DIR=/Users/zhoushitie/Desktop/work/my-project docker compose run --rm dev
 ```
 
+## 构建缓存
+
+`Dockerfile` 已按缓存粒度拆分：基础 apt 包、Node、Go、uv、Rust、Bun、Python、单个 GitHub release 工具、Neovim、npm 全局包分别在独立构建层中安装。常更新的 Neovim 和 AI CLI npm 包放在靠后位置，升级它们时不会牵动前面的运行时层。
+
+构建时还使用 BuildKit cache mount 保留 apt、npm、uv、rustup 的下载缓存。这些缓存属于 Docker builder cache，不是 `docker-compose.yml` 里的运行时 volume；运行时 volume 只在容器启动后保存 npm、pnpm、cargo、Go module、Neovim 等状态。
+
+如果使用 `docker compose build --no-cache`、执行过 `docker builder prune`，或换到没有 builder cache 的新机器，下一次构建仍会全量下载。普通 `docker compose build` 会尽量复用本地构建缓存。
+
 ## GitHub SSH agent
 
 容器通过宿主机 SSH agent 使用 GitHub SSH key，不复制 `~/.ssh/id_*` 私钥到镜像或容器。`docker-compose.yml` 和 `scripts/host-atiedev` 会把宿主机 agent socket 挂载到容器内的 `/agent.sock`，并设置：
